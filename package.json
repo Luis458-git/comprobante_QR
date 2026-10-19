@@ -1,0 +1,19 @@
+{
+  "name": "proyecto-laboratorio1",
+  "version": "1.0.0",
+  "description": "Panel de Riesgo de Proveedores con Comprobante QR - Laboratorio 1",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "node src/main.js",
+    "json": "npx json-server --watch db/db.json --port 3000",
+    "server": "npx json-server --watch db/db.json --port 3000"
+  },
+  "keywords": [
+    "poo",
+    "n8n",
+    "json-server",
+    "qr"
+  ],
+  "author": "",
+  "license": "ISC"
+}

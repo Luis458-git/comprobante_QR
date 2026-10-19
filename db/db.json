@@ -1,0 +1,164 @@
+{
+  "pagos": [
+    {
+      "id": "PAG-001",
+      "idPago": "PAG-001",
+      "fecha": "2026-10-19",
+      "monto": 500000,
+      "estado": "Aprobado",
+      "montoNeto": 435000,
+      "retencion": 65000,
+      "motivoRetencion": null,
+      "datosParaQR": "PROVEEDOR: Soluciones Digitales Alfa S.A. | CEDULA: 3101123456 | MONTO_NETO: CRC 435000.00 | FECHA: 2026-10-19 | SERVICIO: Consultoría TI",
+      "qrUrl": "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=PROVEEDOR%3A%20Soluciones%20Digitales%20Alfa%20S.A.%20%7C%20CEDULA%3A%203101123456%20%7C%20MONTO_NETO%3A%20CRC%20435000.00%20%7C%20FECHA%3A%202026-10-19%20%7C%20SERVICIO%3A%20Consultor%C3%ADa%20TI",
+      "proveedor": {
+        "nombre": "Soluciones Digitales Alfa S.A.",
+        "cedula": "3101123456",
+        "tipoServicio": "Consultoría TI",
+        "porcentajeRetencion": 13,
+        "estadoHacienda": "Al dia",
+        "nivelRiesgo": "Bajo",
+        "email": "soluciones.alfa@techcr.com"
+      }
+    },
+    {
+      "id": "PAG-002",
+      "idPago": "PAG-002",
+      "fecha": "2026-10-19",
+      "monto": 250000,
+      "estado": "Retenido",
+      "montoNeto": null,
+      "retencion": null,
+      "motivoRetencion": "Proveedor figura como Moroso ante el Ministerio de Hacienda",
+      "datosParaQR": null,
+      "qrUrl": null,
+      "proveedor": {
+        "nombre": "Constructora del Valle SRL",
+        "cedula": "3102987654",
+        "tipoServicio": "Mantenimiento de Infraestructura",
+        "porcentajeRetencion": 2,
+        "estadoHacienda": "Moroso",
+        "nivelRiesgo": "Alto",
+        "email": "constructora.valle@infra.cr"
+      }
+    },
+    {
+      "id": "PAG-003",
+      "idPago": "PAG-003",
+      "fecha": "2026-10-19",
+      "monto": 120000,
+      "estado": "Error de validacion",
+      "montoNeto": null,
+      "retencion": null,
+      "motivoRetencion": "Datos incompletos de origen: Cédula del proveedor faltante o nula.",
+      "datosParaQR": null,
+      "qrUrl": null,
+      "proveedor": {
+        "nombre": "Servicios Legales Jurídicos Asociados",
+        "cedula": "",
+        "tipoServicio": "Asesoría Legal",
+        "porcentajeRetencion": 13,
+        "estadoHacienda": "Al dia",
+        "nivelRiesgo": null,
+        "email": "legal@asociados.cr"
+      }
+    },
+    {
+      "id": "PAG-004",
+      "idPago": "PAG-004",
+      "fecha": "2026-10-19",
+      "monto": 0,
+      "estado": "Error de validacion",
+      "montoNeto": null,
+      "retencion": null,
+      "motivoRetencion": "Datos incompletos de origen: El monto (0) debe ser estrictamente mayor a 0.",
+      "datosParaQR": null,
+      "qrUrl": null,
+      "proveedor": {
+        "nombre": "Marketing y Publicidad Global",
+        "cedula": "3101555888",
+        "tipoServicio": "Publicidad Digital",
+        "porcentajeRetencion": 13,
+        "estadoHacienda": "Al dia",
+        "nivelRiesgo": null,
+        "email": "marketing@global.com"
+      }
+    },
+    {
+      "id": "PAG-005",
+      "idPago": "PAG-005",
+      "fecha": "2026-10-19",
+      "monto": 340000,
+      "estado": "Retenido",
+      "montoNeto": null,
+      "retencion": null,
+      "motivoRetencion": "Error de conexión con Hacienda - Revisión manual",
+      "datosParaQR": null,
+      "qrUrl": null,
+      "proveedor": {
+        "nombre": "Inversiones Fantasma No Registrada",
+        "cedula": "9999999999",
+        "tipoServicio": "Servicios Varios",
+        "porcentajeRetencion": 2,
+        "estadoHacienda": "Desconocido",
+        "nivelRiesgo": null,
+        "email": "fantasma@noexiste.com"
+      }
+    },
+    {
+      "id": "PAG-006",
+      "idPago": "PAG-006",
+      "fecha": "2026-10-19",
+      "monto": 800000,
+      "estado": "Aprobado",
+      "montoNeto": 696000,
+      "retencion": 104000,
+      "motivoRetencion": null,
+      "datosParaQR": "PROVEEDOR: Ciberseguridad y Redes Avanzadas | CEDULA: 3101777444 | MONTO_NETO: CRC 696000.00 | FECHA: 2026-10-19 | SERVICIO: Seguridad Informática",
+      "qrUrl": "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=PROVEEDOR%3A%20Ciberseguridad%20y%20Redes%20Avanzadas%20%7C%20CEDULA%3A%203101777444%20%7C%20MONTO_NETO%3A%20CRC%20696000.00%20%7C%20FECHA%3A%202026-10-19%20%7C%20SERVICIO%3A%20Seguridad%20Inform%C3%A1tica",
+      "proveedor": {
+        "nombre": "Ciberseguridad y Redes Avanzadas",
+        "cedula": "3101777444",
+        "tipoServicio": "Seguridad Informática",
+        "porcentajeRetencion": 13,
+        "estadoHacienda": "Al dia",
+        "nivelRiesgo": "Bajo",
+        "email": "ciberseguridad@redes.cr"
+      }
+    }
+  ],
+  "hacienda_mock": [
+    {
+      "cedula": "3101123456",
+      "nombre": "Soluciones Digitales Alfa S.A.",
+      "estadoTributario": "Al dia",
+      "situacion": "Inscrito",
+      "moroso": "NO",
+      "id": "3f3e"
+    },
+    {
+      "cedula": "3102987654",
+      "nombre": "Constructora del Valle SRL",
+      "estadoTributario": "Moroso",
+      "situacion": "Inscrito",
+      "moroso": "SI",
+      "id": "8327"
+    },
+    {
+      "cedula": "3101555888",
+      "nombre": "Marketing y Publicidad Global",
+      "estadoTributario": "Al dia",
+      "situacion": "Inscrito",
+      "moroso": "NO",
+      "id": "a9ec"
+    },
+    {
+      "cedula": "3101777444",
+      "nombre": "Ciberseguridad y Redes Avanzadas",
+      "estadoTributario": "Al dia",
+      "situacion": "Inscrito",
+      "moroso": "NO",
+      "id": "b85b"
+    }
+  ]
+}
