@@ -6,12 +6,14 @@ class EntidadComercial {
   /**
    * @param {string} nombre - Nombre o razón social
    * @param {string} cedula - Número de identificación o cédula jurídica/física
-   * @param {string} email - Correo electrónico de contacto o notificación
+   * @param {string} correo - Correo electrónico de contacto o notificación (Reto 3)
+   * @param {string} email - Alias de compatibilidad para correo
    */
-  constructor(nombre, cedula, email = '') {
+  constructor(nombre, cedula, correo = '', email = '') {
     this.nombre = nombre || '';
     this.cedula = cedula || '';
-    this.email = email || '';
+    this.correo = correo || email || '';
+    this.email = this.correo;
   }
 
   /**

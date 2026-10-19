@@ -10,12 +10,51 @@ class Proveedor extends EntidadComercial {
    * @param {string} cedula - Cédula tributaria del proveedor
    * @param {string|null} estadoHacienda - Estado tributario ("Al dia", "Moroso", "Desconocido")
    * @param {string|null} nivelRiesgo - Nivel de riesgo asignado ("Bajo", "Alto", etc.)
-   * @param {string} email - Correo electrónico del proveedor
+   * @param {string} correo - Correo electrónico del proveedor (Reto 3)
+   * @param {string} email - Alias de compatibilidad
    */
-  constructor(nombre, cedula, estadoHacienda = null, nivelRiesgo = null, email = '') {
-    super(nombre, cedula, email);
+  constructor(nombre, cedula, estadoHacienda = null, nivelRiesgo = null, correo = '', email = '') {
+    super(nombre, cedula, correo, email);
     this.estadoHacienda = estadoHacienda;
     this.nivelRiesgo = nivelRiesgo;
+  }
+
+  /**
+   * Reto 1 - Método Base Polimórfico: procesarPagoEspecifico
+   * Define la firma para el cálculo polimórfico del monto final según el tipo de proveedor.
+   * Las subclases (ProveedorServicios y ProveedorBienes) deben sobrescribir este método.
+   * @param {number} montoBase - Monto bruto original
+   * @returns {{ montoBase: number, montoFinal: number, conceptoAjuste: string }}
+   */
+  procesarPagoEspecifico(montoBase) {
+    throw new Error('El método procesarPagoEspecifico(montoBase) debe ser implementado por la subclase especializada.');
+  }
+
+  /**
+   * Genera una Clave de Pago única y legible para trazabilidad y comprobantes.
+   * Formato: REF-[AÑO]-PAY-[ID]-[RANDOM] (Ej: REF-2026-PAY-PAG-001-A8F2)
+   * @param {string} idPago - Identificador del pago
+   * @param {string} fecha - Fecha del pago
+   * @returns {string} Clave de pago alfanumérica única
+   */
+  generarClavePago(idPago = '000', fecha = new Date().toISOString().split('T')[0]) {
+    const anio = fecha ? (new Date(fecha).getFullYear() || 2026) : 2026;
+    const randomHex = Math.random().toString(36).substring(2, 6).toUpperCase();
+    return `REF-${anio}-PAY-${idPago}-${randomHex}`;
+  }
+
+  /**
+   * Genera la cadena de texto estandarizada (inmutable) para codificar en el código QR.
+   * @param {number} montoFinal - Monto final liquidado tras polimorfismo
+   * @param {string} clavePago - Clave única de referencia
+   * @param {string} fecha - Fecha de la transacción
+   * @param {string} detalle - Descripción o detalle de la categoría
+   * @returns {string} Payload inmutable para el QR
+   */
+  generarPayloadQR(montoFinal, clavePago, fecha = new Date().toISOString().split('T')[0], detalle = '') {
+    const ref = clavePago || this.generarClavePago('000', fecha);
+    const desc = detalle || 'Transacción Comercial';
+    return `CLAVE: ${ref} | PROVEEDOR: ${this.nombre} | CEDULA: ${this.cedula} | MONTO_NETO: CRC ${Number(montoFinal).toFixed(2)} | FECHA: ${fecha} | CONCEPTO: ${desc}`;
   }
 
   /**

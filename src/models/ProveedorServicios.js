@@ -1,9 +1,10 @@
 const Proveedor = require('./Proveedor');
 
 /**
- * Clase Nieto: ProveedorServicios
- * Hereda de Proveedor y añade especialización en servicios profesionales, retenciones tributarias,
- * generación de Clave de Pago única y construcción del payload para el código QR.
+ * Clase Hija: ProveedorServicios
+ * Reto 1: Herencia de Proveedor y aplicación de Polimorfismo.
+ * Especializada en proveedores de la categoría "Servicios" (ej. TI, consultoría, soporte).
+ * Sobrescribe procesarPagoEspecifico() deduciendo un 2% de retención fiscal al monto base.
  */
 class ProveedorServicios extends Proveedor {
   /**
@@ -11,82 +12,78 @@ class ProveedorServicios extends Proveedor {
    * @param {string} cedula - Cédula tributaria
    * @param {string|null} estadoHacienda - Estado tributario ante Hacienda
    * @param {string|null} nivelRiesgo - Nivel de riesgo
-   * @param {string} tipoServicio - Tipo de servicio prestado (ej. "Consultoría TI", "Mantenimiento")
-   * @param {number} porcentajeRetencion - Porcentaje de retención (ej. 13 para 13% o 2 para 2%)
-   * @param {string} email - Correo electrónico del proveedor para envío del comprobante
+   * @param {string} detalle_categoria - Detalle o especialidad (ej. "TI", "Consultoría")
+   * @param {number} porcentajeRetencion - Porcentaje de retención (por defecto 2% según Reto 1)
+   * @param {string} correo - Correo electrónico de contacto o notificación (Reto 3)
+   * @param {string} email - Alias de compatibilidad
    */
   constructor(
     nombre,
     cedula,
     estadoHacienda = null,
     nivelRiesgo = null,
-    tipoServicio = 'Servicios Profesionales',
-    porcentajeRetencion = 13,
+    detalle_categoria = 'TI',
+    porcentajeRetencion = 2,
+    correo = '',
     email = ''
   ) {
-    super(nombre, cedula, estadoHacienda, nivelRiesgo, email);
-    this.tipoServicio = tipoServicio || 'Servicios Profesionales';
-    this.porcentajeRetencion = typeof porcentajeRetencion === 'number' ? porcentajeRetencion : 13;
+    super(nombre, cedula, estadoHacienda, nivelRiesgo, correo, email);
+    this.categoria = 'Servicios';
+    this.detalle_categoria = detalle_categoria || 'Servicios Profesionales';
+    this.tipoServicio = this.detalle_categoria; // Compatibilidad
+    this.porcentajeRetencion = typeof porcentajeRetencion === 'number' ? porcentajeRetencion : 2;
   }
 
   /**
-   * RN-03: Cálculo de retención por servicio.
-   * Aplica deducciones o retenciones según el porcentaje asignado al tipo de servicio profesional.
-   * @param {number} montoBruto - Monto bruto a pagar
-   * @returns {{ montoBruto: number, porcentajeRetencion: number, montoRetencion: number, montoNeto: number }}
+   * Reto 1 - Polimorfismo: procesarPagoEspecifico
+   * Sobrescribe el método de la clase padre Proveedor.
+   * Resta un 2% de retención de impuestos al monto base.
+   * @param {number} montoBase - Monto bruto antes de deducciones
+   * @returns {{ montoBase: number, categoria: string, detalle_categoria: string, porcentajeRetencion: number, retencion: number, flete: number, montoFinal: number, conceptoAjuste: string }}
    */
-  calcularMontoNeto(montoBruto) {
-    const bruto = Number(montoBruto) || 0;
+  procesarPagoEspecifico(montoBase) {
+    const bruto = Number(montoBase) || 0;
     const factor = this.porcentajeRetencion > 1 ? this.porcentajeRetencion / 100 : this.porcentajeRetencion;
-    const montoRetencion = Number((bruto * factor).toFixed(2));
-    const montoNeto = Number((bruto - montoRetencion).toFixed(2));
+    const retencion = Number((bruto * factor).toFixed(2));
+    const montoFinal = Number((bruto - retencion).toFixed(2));
 
     return {
-      montoBruto: bruto,
+      montoBase: bruto,
+      categoria: this.categoria,
+      detalle_categoria: this.detalle_categoria,
       porcentajeRetencion: this.porcentajeRetencion,
-      montoRetencion,
-      montoNeto
+      retencion,
+      flete: 0,
+      montoFinal,
+      montoNeto: montoFinal,
+      conceptoAjuste: `Retención fiscal (${this.porcentajeRetencion}%)`
     };
   }
 
   /**
-   * Genera una Clave de Pago única y legible para trazabilidad y comprobantes.
-   * Formato: REF-[AÑO]-PAY-[ID]-[RANDOM] (Ej: REF-2026-PAY-PAG-001-A8F2)
-   * @param {string} idPago - Identificador del pago
-   * @param {string} fecha - Fecha del pago
-   * @returns {string} Clave de pago alfanumérica única
+   * Alias de compatibilidad con código previo
+   * @param {number} montoBruto
    */
-  generarClavePago(idPago = '000', fecha = new Date().toISOString().split('T')[0]) {
-    const anio = fecha ? (new Date(fecha).getFullYear() || 2026) : 2026;
-    const randomHex = Math.random().toString(36).substring(2, 6).toUpperCase();
-    return `REF-${anio}-PAY-${idPago}-${randomHex}`;
+  calcularMontoNeto(montoBruto) {
+    const res = this.procesarPagoEspecifico(montoBruto);
+    return {
+      montoBruto: res.montoBase,
+      porcentajeRetencion: res.porcentajeRetencion,
+      montoRetencion: res.retencion,
+      montoNeto: res.montoFinal
+    };
   }
 
   /**
-   * RN-04: Generación de cadena de texto estandarizada para el código QR con Clave de Pago.
-   * @param {number} montoNeto - Monto neto liquidado
-   * @param {string} clavePago - Clave única de referencia
-   * @param {string} fecha - Fecha de la transacción
-   * @returns {string} Payload inmutable
-   */
-  generarPayloadQR(montoNeto, clavePago, fecha = new Date().toISOString().split('T')[0]) {
-    const ref = clavePago || this.generarClavePago('000', fecha);
-    return `CLAVE: ${ref} | PROVEEDOR: ${this.nombre} | CEDULA: ${this.cedula} | MONTO_NETO: CRC ${Number(montoNeto).toFixed(2)} | FECHA: ${fecha} | SERVICIO: ${this.tipoServicio}`;
-  }
-
-  /**
-   * Genera simultáneamente las dos propiedades requeridas para el comprobante:
-   * 1. clavePago: Referencia única legible (para correo y encabezados).
-   * 2. datosParaQR: Payload estructurado para api.qrserver.com.
+   * Genera simultáneamente la clave de pago y el payload del código QR.
    * @param {string} idPago - Identificador del pago
-   * @param {number} montoNeto - Monto neto a pagar
+   * @param {number} montoNeto - Monto final liquidado
    * @param {string} fecha - Fecha del pago
    * @returns {{ clavePago: string, datosParaQR: string }}
    */
   generarComprobante(idPago, montoNeto, fecha = new Date().toISOString().split('T')[0]) {
     const clavePago = this.generarClavePago(idPago, fecha);
-    const datosParaQR = this.generarPayloadQR(montoNeto, clavePago, fecha);
-
+    const datosParaQR = this.generarPayloadQR(montoNeto, clavePago, fecha, this.detalle_categoria);
     return {
       clavePago,
       datosParaQR

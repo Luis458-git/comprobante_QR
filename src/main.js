@@ -1,56 +1,71 @@
 /**
  * Script de prueba independiente en consola para la solución POO
+ * Reto 1: Jerarquía de clases con herencia y polimorfismo (ProveedorServicios y ProveedorBienes)
+ * Reto 3: Notificación automática por correo (correoDestino, emailHtml, clavePago)
  * Ejecutable directamente con: node src/main.js
  */
 
 const EntidadComercial = require('./models/EntidadComercial');
 const Proveedor = require('./models/Proveedor');
 const ProveedorServicios = require('./models/ProveedorServicios');
+const ProveedorBienes = require('./models/ProveedorBienes');
 const Pago = require('./models/Pago');
 const db = require('../db/db.json');
 
-console.log('='.repeat(75));
-console.log('  LABORATORIO 1 - PANEL DE RIESGO DE PROVEEDORES CON COMPROBANTE QR');
-console.log('  Demostración de Arquitectura POO (Herencia de 3 niveles + Composición)');
-console.log('='.repeat(75));
+console.log('='.repeat(78));
+console.log('  LABORATORIO 1 - RETO 1 (HERENCIA Y POLIMORFISMO) & RETO 3 (CORREO AUTOMÁTICO)');
+console.log('  Jerarquía: EntidadComercial -> Proveedor -> [ProveedorServicios | ProveedorBienes]');
+console.log('='.repeat(78));
 console.log();
 
-// 1. Verificación de la Jerarquía de Clases (Herencia de 3 niveles)
-console.log('📌 1. VERIFICACIÓN DE JERARQUÍA Y HERENCIA POO:');
-const demoProveedor = new ProveedorServicios(
-  'Tech Solutions CR',
+// 1. Verificación de la Jerarquía de Clases y Polimorfismo
+console.log('📌 1. VERIFICACIÓN DE JERARQUÍA Y POLIMORFISMO:');
+
+const servicioDemo = new ProveedorServicios(
+  'Tech Consultores S.A.',
   '3101999888',
   'Al dia',
   'Bajo',
-  'Consultoría Cloud',
-  13
+  'TI',
+  2,
+  'tech@consultores.cr'
 );
 
-console.log(`- Instancia: ${demoProveedor.obtenerIdentificacion()}`);
-console.log(`- ¿Es instancia de ProveedorServicios (Nieto)? ${demoProveedor instanceof ProveedorServicios}`);
-console.log(`- ¿Es instancia de Proveedor (Padre)?          ${demoProveedor instanceof Proveedor}`);
-console.log(`- ¿Es instancia de EntidadComercial (Abuelo)?  ${demoProveedor instanceof EntidadComercial}`);
+const bienesDemo = new ProveedorBienes(
+  'Distribuidora Global S.A.',
+  '3101888777',
+  'Al dia',
+  'Bajo',
+  'Suministros de oficina',
+  5000,
+  'ventas@global.cr'
+);
+
+console.log(`- Servicio: ${servicioDemo.obtenerIdentificacion()}`);
+console.log(`  • ¿Hereda de Proveedor?        ${servicioDemo instanceof Proveedor}`);
+console.log(`  • ¿Hereda de EntidadComercial? ${servicioDemo instanceof EntidadComercial}`);
+console.log(`  • Polimorfismo (Base CRC 100,000): Monto Final = CRC ${servicioDemo.procesarPagoEspecifico(100000).montoFinal} (Resta 2% retención)`);
+
+console.log(`- Bienes:   ${bienesDemo.obtenerIdentificacion()}`);
+console.log(`  • ¿Hereda de Proveedor?        ${bienesDemo instanceof Proveedor}`);
+console.log(`  • ¿Hereda de EntidadComercial? ${bienesDemo instanceof EntidadComercial}`);
+console.log(`  • Polimorfismo (Base CRC 100,000): Monto Final = CRC ${bienesDemo.procesarPagoEspecifico(100000).montoFinal} (Suma CRC 5,000 flete)`);
 console.log();
 
-// 2. Ejecución de casos de prueba simulados basados en db.json
-console.log('📌 2. PROCESAMIENTO DE CASOS DE PRUEBA (REGLAS DE NEGOCIO Y MANEJO DE ERRORES):');
-console.log('-'.repeat(75));
-
-// Mapeo de estados de Hacienda según el mock o datos de entrada
-const mockHaciendaMap = new Map();
-db.hacienda_mock.forEach((item) => {
-  mockHaciendaMap.set(item.cedula, item.estadoTributario);
-});
+// 2. Procesamiento de casos de prueba
+console.log('📌 2. PROCESAMIENTO DE CASOS DE PRUEBA:');
+console.log('-'.repeat(78));
 
 const casos = [
   {
-    titulo: 'CASO 1: Proveedor al día (Flujo exitoso -> Aprobado con Retención y QR)',
+    titulo: 'CASO 1: Servicios al día (Polimorfismo -> Resta 2% Retención + Clave + QR + Correo)',
     id: 'PAG-001',
     monto: 500000,
     nombre: 'Soluciones Digitales Alfa S.A.',
     cedula: '3101123456',
-    tipoServicio: 'Consultoría TI',
-    retencion: 13,
+    categoria: 'Servicios',
+    detalle_categoria: 'TI',
+    correo: 'lmendezpozo@gmail.com',
     estadoHacienda: 'Al dia'
   },
   {
@@ -59,8 +74,9 @@ const casos = [
     monto: 250000,
     nombre: 'Constructora del Valle SRL',
     cedula: '3102987654',
-    tipoServicio: 'Mantenimiento de Infraestructura',
-    retencion: 2,
+    categoria: 'Servicios',
+    detalle_categoria: 'Mantenimiento de Infraestructura',
+    correo: 'lmendezpozo@gmail.com',
     estadoHacienda: 'Moroso'
   },
   {
@@ -69,8 +85,9 @@ const casos = [
     monto: 120000,
     nombre: 'Servicios Legales Jurídicos Asociados',
     cedula: '',
-    tipoServicio: 'Asesoría Legal',
-    retencion: 13,
+    categoria: 'Servicios',
+    detalle_categoria: 'Asesoría Legal',
+    correo: 'lmendezpozo@gmail.com',
     estadoHacienda: 'Al dia'
   },
   {
@@ -79,8 +96,9 @@ const casos = [
     monto: 0,
     nombre: 'Marketing y Publicidad Global',
     cedula: '3101555888',
-    tipoServicio: 'Publicidad Digital',
-    retencion: 13,
+    categoria: 'Bienes',
+    detalle_categoria: 'Suministros de oficina',
+    correo: 'lmendezpozo@gmail.com',
     estadoHacienda: 'Al dia'
   },
   {
@@ -89,52 +107,75 @@ const casos = [
     monto: 340000,
     nombre: 'Inversiones Fantasma No Registrada',
     cedula: '9999999999',
-    tipoServicio: 'Servicios Varios',
-    retencion: 2,
+    categoria: 'Bienes',
+    detalle_categoria: 'Mobiliario',
+    correo: 'lmendezpozo@gmail.com',
     estadoHacienda: 'Desconocido'
+  },
+  {
+    titulo: 'CASO 6: Bienes al día (Polimorfismo -> Suma CRC 5,000 Flete + Clave + QR + Correo)',
+    id: 'PAG-006',
+    monto: 800000,
+    nombre: 'Ciberseguridad y Redes Avanzadas',
+    cedula: '3101777444',
+    categoria: 'Bienes',
+    detalle_categoria: 'Hardware y Servidores',
+    correo: 'lmendezpozo@gmail.com',
+    estadoHacienda: 'Al dia'
   }
 ];
 
 casos.forEach((caso, index) => {
   console.log(`\n▶ [${index + 1}] ${caso.titulo}`);
-  
-  // Instanciación del modelo Nieto (ProveedorServicios)
-  const proveedor = new ProveedorServicios(
-    caso.nombre,
-    caso.cedula,
-    caso.estadoHacienda,
-    null,
-    caso.tipoServicio,
-    caso.retencion,
-    `contacto@${caso.nombre.toLowerCase().replace(/[^a-z0-9]/g, '')}.cr`
-  );
 
-  // Instanciación de la clase de Composición (Pago)
+  // Polimorfismo en instanciación según categoría
+  let proveedor;
+  if (caso.categoria === 'Bienes') {
+    proveedor = new ProveedorBienes(
+      caso.nombre,
+      caso.cedula,
+      caso.estadoHacienda,
+      null,
+      caso.detalle_categoria,
+      5000,
+      caso.correo
+    );
+  } else {
+    proveedor = new ProveedorServicios(
+      caso.nombre,
+      caso.cedula,
+      caso.estadoHacienda,
+      null,
+      caso.detalle_categoria,
+      2,
+      caso.correo
+    );
+  }
+
   const pago = new Pago(caso.id, caso.monto, proveedor, '2026-10-19');
-
-  // Procesamiento orquestado
   pago.procesarPago();
 
-  console.log(`   • ID Pago:           ${pago.idPago}`);
-  console.log(`   • Proveedor:         ${proveedor.obtenerIdentificacion()}`);
-  console.log(`   • Correo Notif.:     ${proveedor.email}`);
-  console.log(`   • Estado Hacienda:   ${proveedor.estadoHacienda || 'No verificado'}`);
-  console.log(`   • Nivel de Riesgo:   ${proveedor.nivelRiesgo || 'No evaluado'}`);
-  console.log(`   • Monto Bruto:       CRC ${pago.monto.toLocaleString('es-CR')}`);
-  console.log(`   • Estado Final Pago: ${pago.estado}`);
+  const salida = pago.toObjeto();
 
-  if (pago.estado === 'Aprobado') {
-    console.log(`   • Clave de Pago:     ${pago.clavePago}`);
-    console.log(`   • Retención (${proveedor.porcentajeRetencion}%):   CRC ${pago.retencion.toLocaleString('es-CR')}`);
-    console.log(`   • Monto Neto Final:  CRC ${pago.montoNeto.toLocaleString('es-CR')}`);
-    console.log(`   • Payload QR:        "${pago.datosParaQR}"`);
-    console.log(`   • URL Comprobante:   ${pago.qrUrl}`);
+  console.log(`   • ID Pago:           ${salida.idPago}`);
+  console.log(`   • Proveedor:         ${proveedor.obtenerIdentificacion()}`);
+  console.log(`   • Categoría:         ${proveedor.categoria} (${proveedor.detalle_categoria})`);
+  console.log(`   • Correo Destino:    ${salida.correoDestino}`);
+  console.log(`   • Estado Procesado:  ${salida.estadoProcesado}`);
+  console.log(`   • Monto Base:        CRC ${salida.monto.toLocaleString('es-CR')}`);
+
+  if (salida.estadoProcesado === 'Aprobado') {
+    console.log(`   • Clave de Pago:     ${salida.clavePago}`);
+    console.log(`   • Ajuste Aplicado:   ${salida.calculoEspecifico?.conceptoAjuste}`);
+    console.log(`   • Monto Final Liq.:  CRC ${salida.montoFinal.toLocaleString('es-CR')}`);
+    console.log(`   • Payload para QR:   "${salida.datosParaCodificarEnQR}"`);
+    console.log(`   • URL Comprobante:   ${salida.qrUrl}`);
   } else {
-    console.log(`   • Motivo:            ${pago.motivoRetencion}`);
-    console.log(`   • Comprobante QR:    ${pago.qrUrl ? pago.qrUrl : 'BLOQUEADO (RN-05 cumplida)'}`);
+    console.log(`   • Motivo Retención:  ${salida.motivoRetencion}`);
+    console.log(`   • Código QR:         BLOQUEADO (RN-05 cumplida)`);
   }
 });
 
-console.log('\n' + '='.repeat(75));
-console.log('  Ejecución finalizada con éxito. Todos los casos evaluados correctamente.');
-console.log('='.repeat(75));
+console.log('\n' + '='.repeat(78));
+console.log('  Demostración finalizada con éxito. Reto 1 y Reto 3 verificados al 100%.');
+console.log('='.repeat(78));

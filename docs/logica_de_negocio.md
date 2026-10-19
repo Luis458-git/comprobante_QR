@@ -15,40 +15,40 @@ El objetivo primordial es garantizar que ningún desembolso sea emitido a provee
 
 ## 2. Arquitectura de Dominio (POO)
 
-### 2.1 Jerarquía de Herencia en 3 Niveles
-La solución adopta una estricta jerarquía de herencia vertical para maximizar la reutilización y el principio de responsabilidad única:
+### 2.1 Jerarquía de Herencia en 3 Niveles y Polimorfismo Real (Reto 1)
+La solución adopta una estricta jerarquía de herencia vertical y polimorfismo en tiempo de ejecución:
 
 1. **Clase Abuelo: `EntidadComercial` (`src/models/EntidadComercial.js`)**
    - **Responsabilidad:** Modela la identidad legal básica de cualquier participante comercial (persona física o jurídica).
-   - **Atributos:** `nombre`, `cedula`.
+   - **Atributos:** `nombre`, `cedula`, `correo`, `email`.
    - **Métodos:**
-     - `obtenerIdentificacion()`: Retorna la representación formateada y legible de la entidad o notifica la ausencia de identificación legal.
+     - `obtenerIdentificacion()`: Retorna la representación formateada y legible de la entidad junto con su correo.
      - `esIdentificacionValida()`: Valida sintácticamente la presencia de la cédula.
 
 2. **Clase Padre: `Proveedor` (`src/models/Proveedor.js`)**
-   - **Responsabilidad:** Especializa a la entidad comercial agregando el contexto tributario y la evaluación de riesgo ante el Ministerio de Hacienda.
+   - **Responsabilidad:** Especializa a la entidad comercial agregando el contexto tributario ante el Ministerio de Hacienda y define el contrato polimórfico de pago.
    - **Herencia:** `class Proveedor extends EntidadComercial`.
-   - **Atributos heredados y propios:** `nombre`, `cedula`, `estadoHacienda`, `nivelRiesgo`.
+   - **Atributos heredados y propios:** `nombre`, `cedula`, `correo`, `estadoHacienda`, `nivelRiesgo`.
    - **Métodos:**
-     - `evaluarRiesgo()`: Evalúa si el estado tributario representa un riesgo financiero:
-       - Si `estadoHacienda === "Al dia"` $\rightarrow$ Riesgo `"Bajo"`, apto para procesar.
-       - Si `estadoHacienda === "Moroso"` $\rightarrow$ Riesgo `"Alto"`, bloqueo automático (**RN-02**).
-       - Si `estadoHacienda === "Desconocido"` o nulo $\rightarrow$ Riesgo `"Alto"` preventivo (**ERR-02** y **RN-01**).
+     - `evaluarRiesgo()`: Evalúa si el estado tributario representa un riesgo financiero (Al día = Bajo, Moroso = Alto, Desconocido = Alto).
+     - `procesarPagoEspecifico(montoBase)`: Método base que define la firma polimórfica para el cálculo especializado del monto final.
+     - `generarClavePago(idPago, fecha)`: Genera la Clave de Pago única (Ej: `REF-2026-PAY-[ID]-[RANDOM]`).
+     - `generarPayloadQR(montoFinal, clavePago, fecha, detalle)`: Genera la cadena inmutable para el código QR.
 
-3. **Clase Nieto: `ProveedorServicios` (`src/models/ProveedorServicios.js`)**
-   - **Responsabilidad:** Especializa al proveedor en el sector de servicios profesionales, gestionando tasas de retención fiscal y la construcción de la carga útil del código QR.
-   - **Herencia:** `class ProveedorServicios extends Proveedor`.
-   - **Atributos heredados y propios:** `tipoServicio`, `porcentajeRetencion` (ej. 13% o 2%).
-   - **Métodos:**
-     - `calcularMontoNeto(montoBruto)`: Aplica la deducción del porcentaje de retención sobre el monto bruto, retornando el desglose de monto retenido y monto líquido a girar (**RN-03**).
-     - `generarPayloadQR(montoNeto, fecha)`: Construye la cadena estructurada inmutable con los datos clave de la transacción: Proveedor, Cédula, Monto Neto, Fecha y Servicio (**RN-04**).
+3. **Clases Hijas Especializadas (Polimorfismo Reto 1):**
+   - **`ProveedorServicios` (`src/models/ProveedorServicios.js`):**
+     - **Atributos:** `categoria = 'Servicios'`, `detalle_categoria` (ej. "TI"), `porcentajeRetencion` (2%).
+     - **Polimorfismo:** Sobrescribe `procesarPagoEspecifico(montoBase)` restando un **2% de retención de impuestos** sobre el monto base.
+   - **`ProveedorBienes` (`src/models/ProveedorBienes.js`):**
+     - **Atributos:** `categoria = 'Bienes'`, `detalle_categoria` (ej. "Suministros de oficina"), `flete` (CRC 5000).
+     - **Polimorfismo:** Sobrescribe `procesarPagoEspecifico(montoBase)` sumando un **monto fijo de flete de CRC 5,000** al monto base.
 
 ### 2.2 Clase de Proceso y Composición: `Pago` (`src/models/Pago.js`)
-- **Responsabilidad:** Orquestador central del ciclo de vida del pago. Implementa una relación de **composición** al contener una instancia de `ProveedorServicios`.
-- **Atributos:** `idPago`, `monto`, `proveedor` (instancia de `ProveedorServicios`), `fecha`, `estado`, `montoNeto`, `retencion`, `datosParaQR`, `qrUrl`, `motivoRetencion`.
+- **Responsabilidad:** Orquestador central del ciclo de vida del pago. Implementa una relación de **composición** al contener una instancia polimórfica de `Proveedor`.
+- **Atributos:** `idPago`, `monto`, `proveedor`, `fecha`, `estado`, `estadoProcesado`, `montoFinal`, `montoNeto`, `retencion`, `flete`, `clavePago`, `datosParaCodificarEnQR`, `correoDestino`, `qrUrl`, `emailHtml`, `motivoRetencion`.
 - **Métodos:**
-  - `procesarPago()`: Evalúa secuencialmente la validez de datos (**ERR-01**), el estado del servicio externo (**ERR-02**), la consulta obligatoria (**RN-01**) y el riesgo tributario (**RN-02**). En caso de aprobación, liquida la retención (**RN-03**) y construye el comprobante QR (**RN-04**). En caso de retención o error, bloquea irrevocablemente cualquier URL o payload QR (**RN-05**).
-  - `toObjeto()`: Normaliza y serializa la entidad procesada para su persistencia en JSON Server o consumo en n8n.
+  - `procesarPago()`: Evalúa secuencialmente la validez de datos (**ERR-01**), el estado del servicio externo (**ERR-02**), la consulta obligatoria (**RN-01**) y el riesgo tributario (**RN-02**). En caso de aprobación, ejecuta polimórficamente `proveedor.procesarPagoEspecifico(this.monto)`, emite la **Clave de Pago visible**, genera el payload inmutable para el QR (**RN-04**), asigna el `correoDestino` (**Reto 3**) y renderiza la plantilla ejecutiva `emailHtml`. En caso de retención o error, bloquea irrevocablemente cualquier URL o payload QR (**RN-05**).
+  - `toObjeto()`: Normaliza y serializa la entidad procesada retornando explícitamente `idPago`, `estadoProcesado`, `clavePago`, `datosParaCodificarEnQR` y `correoDestino`.
 
 ---
 

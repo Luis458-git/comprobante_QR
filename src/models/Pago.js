@@ -1,17 +1,18 @@
 const ProveedorServicios = require('./ProveedorServicios');
+const ProveedorBienes = require('./ProveedorBienes');
 
 /**
  * Clase de Proceso / Composición: Pago
- * Contiene y orquesta el procesamiento del pago a un ProveedorServicios,
- * validando datos de entrada, riesgo tributario, emisión de Clave de Pago y QR.
+ * Contiene y orquesta el procesamiento del pago a un Proveedor (Servicios o Bienes),
+ * aplicando polimorfismo con procesarPagoEspecifico(), emisión de Clave de Pago y QR.
  */
 class Pago {
   /**
    * @param {string} idPago - Identificador único del pago (ej. "PAG-001")
-   * @param {number} monto - Monto bruto a pagar
-   * @param {ProveedorServicios} proveedor - Instancia de ProveedorServicios (Composición)
+   * @param {number} monto - Monto bruto original
+   * @param {ProveedorServicios|ProveedorBienes} proveedor - Instancia de subclase de Proveedor (Composición)
    * @param {string} fecha - Fecha del pago (YYYY-MM-DD)
-   * @param {string} estado - Estado inicial del pago (por defecto "Pendiente")
+   * @param {string} estado - Estado inicial del pago ("Pendiente")
    */
   constructor(idPago, monto, proveedor, fecha = new Date().toISOString().split('T')[0], estado = 'Pendiente') {
     this.idPago = idPago;
@@ -19,18 +20,24 @@ class Pago {
     this.proveedor = proveedor;
     this.fecha = fecha;
     this.estado = estado;
+    this.estadoProcesado = estado;
+    this.montoFinal = null;
     this.montoNeto = null;
-    this.retencion = null;
+    this.retencion = 0;
+    this.flete = 0;
+    this.calculoEspecifico = null;
     this.clavePago = null;
+    this.datosParaCodificarEnQR = null;
     this.datosParaQR = null;
     this.qrUrl = null;
+    this.correoDestino = proveedor ? (proveedor.correo || proveedor.email || '') : '';
     this.emailHtml = null;
     this.motivoRetencion = null;
   }
 
   /**
    * Genera la plantilla HTML premium y profesional del comprobante de pago para correo.
-   * Interpola directamente los valores reales para evitar etiquetas sin evaluar.
+   * Interpola directamente los valores reales calculados mediante polimorfismo.
    * @returns {string} Plantilla HTML completamente renderizada
    */
   generarEmailHtml() {
@@ -39,8 +46,28 @@ class Pago {
     }
 
     const montoBrutoFmt = Number(this.monto).toLocaleString('es-CR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const montoFinalFmt = Number(this.montoFinal).toLocaleString('es-CR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const retencionFmt = Number(this.retencion).toLocaleString('es-CR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const montoNetoFmt = Number(this.montoNeto).toLocaleString('es-CR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const fleteFmt = Number(this.flete).toLocaleString('es-CR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    const categoria = this.proveedor ? this.proveedor.categoria : 'General';
+    const detalleCategoria = this.proveedor ? (this.proveedor.detalle_categoria || this.proveedor.tipoServicio) : 'Comercial';
+
+    // Fila dinámica de ajuste polimórfico (Retención para Servicios o Flete para Bienes)
+    let filaAjusteHtml = '';
+    if (this.retencion > 0) {
+      filaAjusteHtml = `
+          <tr>
+            <td style="padding: 10px 16px; font-size: 13px; color: #e11d48; border-bottom: 1px solid #e2e8f0;">Retención Fiscal (${this.calculoEspecifico?.porcentajeRetencion || 2}%):</td>
+            <td style="padding: 10px 16px; font-size: 13px; font-weight: 600; color: #e11d48; text-align: right; border-bottom: 1px solid #e2e8f0;">- CRC ${retencionFmt}</td>
+          </tr>`;
+    } else if (this.flete > 0) {
+      filaAjusteHtml = `
+          <tr>
+            <td style="padding: 10px 16px; font-size: 13px; color: #0284c7; border-bottom: 1px solid #e2e8f0;">Cargo por Flete y Transporte:</td>
+            <td style="padding: 10px 16px; font-size: 13px; font-weight: 600; color: #0284c7; text-align: right; border-bottom: 1px solid #e2e8f0;">+ CRC ${fleteFmt}</td>
+          </tr>`;
+    }
 
     return `<!DOCTYPE html>
 <html lang="es">
@@ -102,24 +129,21 @@ class Pago {
             <td style="padding: 10px 16px; font-size: 13px; font-weight: 600; color: #0f172a; text-align: right; border-bottom: 1px solid #f1f5f9;">${this.proveedor.cedula}</td>
           </tr>
           <tr>
-            <td style="padding: 10px 16px; font-size: 13px; color: #64748b; border-bottom: 1px solid #f1f5f9;">Servicio Prestado:</td>
-            <td style="padding: 10px 16px; font-size: 13px; font-weight: 600; color: #0f172a; text-align: right; border-bottom: 1px solid #f1f5f9;">${this.proveedor.tipoServicio}</td>
+            <td style="padding: 10px 16px; font-size: 13px; color: #64748b; border-bottom: 1px solid #f1f5f9;">Categoría del Proveedor:</td>
+            <td style="padding: 10px 16px; font-size: 13px; font-weight: 600; color: #0f172a; text-align: right; border-bottom: 1px solid #f1f5f9;">${categoria} (${detalleCategoria})</td>
           </tr>
           <tr>
             <td style="padding: 10px 16px; font-size: 13px; color: #64748b; border-bottom: 1px solid #f1f5f9;">Fecha de Aplicación:</td>
             <td style="padding: 10px 16px; font-size: 13px; font-weight: 600; color: #0f172a; text-align: right; border-bottom: 1px solid #f1f5f9;">${this.fecha}</td>
           </tr>
           <tr>
-            <td style="padding: 10px 16px; font-size: 13px; color: #64748b; border-bottom: 1px solid #f1f5f9;">Monto Bruto:</td>
+            <td style="padding: 10px 16px; font-size: 13px; color: #64748b; border-bottom: 1px solid #f1f5f9;">Monto Base:</td>
             <td style="padding: 10px 16px; font-size: 13px; font-weight: 600; color: #334155; text-align: right; border-bottom: 1px solid #f1f5f9;">CRC ${montoBrutoFmt}</td>
           </tr>
-          <tr>
-            <td style="padding: 10px 16px; font-size: 13px; color: #e11d48; border-bottom: 1px solid #e2e8f0;">Retención Fiscal (${this.proveedor.porcentajeRetencion}%):</td>
-            <td style="padding: 10px 16px; font-size: 13px; font-weight: 600; color: #e11d48; text-align: right; border-bottom: 1px solid #e2e8f0;">- CRC ${retencionFmt}</td>
-          </tr>
+          ${filaAjusteHtml}
           <tr style="background: #f0fdf4;">
-            <td style="padding: 14px 16px; font-size: 14px; font-weight: 700; color: #166534;">Monto Líquido a Pagar:</td>
-            <td style="padding: 14px 16px; font-size: 18px; font-weight: 900; color: #166534; text-align: right;">CRC ${montoNetoFmt}</td>
+            <td style="padding: 14px 16px; font-size: 14px; font-weight: 700; color: #166534;">Monto Final Liquidado:</td>
+            <td style="padding: 14px 16px; font-size: 18px; font-weight: 900; color: #166534; text-align: right;">CRC ${montoFinalFmt}</td>
           </tr>
         </table>
 
@@ -143,7 +167,7 @@ class Pago {
           </div>
 
           <div style="margin-top: 14px; font-size: 11px; color: #64748b; font-family: monospace; background: #ffffff; border: 1px solid #e2e8f0; padding: 8px 12px; border-radius: 6px; word-break: break-all; text-align: left;">
-            <strong style="color: #475569;">Payload auditado:</strong> ${this.datosParaQR}
+            <strong style="color: #475569;">Payload auditado:</strong> ${this.datosParaCodificarEnQR}
           </div>
         </div>
 
@@ -168,12 +192,11 @@ class Pago {
   }
 
   /**
-   * Orquesta todo el flujo del pago aplicando reglas de negocio y excepciones.
+   * Orquesta todo el flujo del pago aplicando reglas de negocio y polimorfismo.
    * RN-01: Validación tributaria obligatoria
    * RN-02: Bloqueo automático por morosidad
-   * RN-03: Cálculo de retención
-   * RN-04: Generación obligatoria de comprobante (clavePago y QR) para pagos aprobados
-   * RN-05: Restricción absoluta de comprobante en pagos retenidos o con error
+   * Reto 1: Polimorfismo con procesarPagoEspecifico()
+   * Reto 3: Notificación por correo a correoDestino
    * ERR-01: Validación de datos incompletos de origen
    * ERR-02: Manejo de caída del servicio de Hacienda
    * @returns {Pago} Retorna la misma instancia procesada con los estados finales
@@ -182,8 +205,10 @@ class Pago {
     // ERR-01: Datos incompletos de origen (cédula vacía/nula o monto <= 0)
     if (!this.proveedor || !this.proveedor.cedula || this.proveedor.cedula.toString().trim() === '') {
       this.estado = 'Error de validacion';
+      this.estadoProcesado = this.estado;
       this.motivoRetencion = 'Datos incompletos de origen: Cédula del proveedor faltante o nula.';
       this.clavePago = null;
+      this.datosParaCodificarEnQR = null;
       this.datosParaQR = null;
       this.qrUrl = null;
       this.emailHtml = null;
@@ -192,8 +217,10 @@ class Pago {
 
     if (isNaN(this.monto) || this.monto <= 0) {
       this.estado = 'Error de validacion';
+      this.estadoProcesado = this.estado;
       this.motivoRetencion = `Datos incompletos de origen: El monto (${this.monto}) debe ser estrictamente mayor a 0.`;
       this.clavePago = null;
+      this.datosParaCodificarEnQR = null;
       this.datosParaQR = null;
       this.qrUrl = null;
       this.emailHtml = null;
@@ -203,8 +230,10 @@ class Pago {
     // ERR-02: Caída del servicio externo o Cédula no encontrada en Hacienda
     if (this.proveedor.estadoHacienda === 'Desconocido') {
       this.estado = 'Retenido';
+      this.estadoProcesado = this.estado;
       this.motivoRetencion = 'Error de conexión con Hacienda - Revisión manual';
       this.clavePago = null;
+      this.datosParaCodificarEnQR = null;
       this.datosParaQR = null;
       this.qrUrl = null;
       this.emailHtml = null;
@@ -214,8 +243,10 @@ class Pago {
     // RN-01: Validación tributaria obligatoria
     if (!this.proveedor.estadoHacienda || this.proveedor.estadoHacienda.trim() === '') {
       this.estado = 'Retenido';
+      this.estadoProcesado = this.estado;
       this.motivoRetencion = 'Validación tributaria obligatoria: El proveedor no cuenta con verificación de Hacienda.';
       this.clavePago = null;
+      this.datosParaCodificarEnQR = null;
       this.datosParaQR = null;
       this.qrUrl = null;
       this.emailHtml = null;
@@ -227,9 +258,11 @@ class Pago {
 
     if (evaluacionRiesgo.esRiesgoso) {
       this.estado = 'Retenido';
+      this.estadoProcesado = this.estado;
       this.motivoRetencion = evaluacionRiesgo.motivo;
       // RN-05: Restricción absoluta de comprobante en pagos retenidos
       this.clavePago = null;
+      this.datosParaCodificarEnQR = null;
       this.datosParaQR = null;
       this.qrUrl = null;
       this.emailHtml = null;
@@ -238,18 +271,31 @@ class Pago {
 
     // Si no es riesgoso, se procede con la APROBACIÓN
     this.estado = 'Aprobado';
+    this.estadoProcesado = this.estado;
     this.motivoRetencion = null;
 
-    // RN-03: Cálculo de retención por servicio
-    const desglose = this.proveedor.calcularMontoNeto(this.monto);
-    this.montoNeto = desglose.montoNeto;
-    this.retencion = desglose.montoRetencion;
+    // Reto 1: Polimorfismo llamando a procesarPagoEspecifico()
+    this.calculoEspecifico = this.proveedor.procesarPagoEspecifico(this.monto);
+    this.montoFinal = this.calculoEspecifico.montoFinal;
+    this.montoNeto = this.montoFinal;
+    this.retencion = this.calculoEspecifico.retencion || 0;
+    this.flete = this.calculoEspecifico.flete || 0;
 
-    // RN-04: Generación de comprobante dual (Clave de Pago única + Payload QR)
-    const comprobante = this.proveedor.generarComprobante(this.idPago, this.montoNeto, this.fecha);
-    this.clavePago = comprobante.clavePago;
-    this.datosParaQR = comprobante.datosParaQR;
-    this.qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(this.datosParaQR)}`;
+    // Reto 1 & 4: Clave de Pago única visible (Ej: REF-2026-PAY-[ID]-[RANDOM])
+    this.clavePago = this.proveedor.generarClavePago(this.idPago, this.fecha);
+
+    // Reto 1 & 4: Payload QR con Clave de Pago y detalle
+    this.datosParaCodificarEnQR = this.proveedor.generarPayloadQR(
+      this.montoFinal,
+      this.clavePago,
+      this.fecha,
+      this.proveedor.detalle_categoria || this.proveedor.tipoServicio
+    );
+    this.datosParaQR = this.datosParaCodificarEnQR;
+    this.qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(this.datosParaCodificarEnQR)}`;
+
+    // Reto 3: Notificación por correo a correoDestino
+    this.correoDestino = this.proveedor.correo || this.proveedor.email || 'lmendezpozo@gmail.com';
 
     // Renderiza la plantilla HTML directamente con los datos computados
     this.emailHtml = this.generarEmailHtml();
@@ -258,31 +304,43 @@ class Pago {
   }
 
   /**
-   * Serializa el estado del pago a un objeto compatible con JSON Server y n8n
+   * Serializa el estado del pago a un objeto compatible con n8n y JSON Server
+   * Devuelve explícitamente: idPago, estadoProcesado, clavePago, datosParaCodificarEnQR, correoDestino
    * @returns {object}
    */
   toObjeto() {
     return {
-      id: this.idPago,
+      // Campos requeridos por Reto 1 y Reto 3
       idPago: this.idPago,
+      estadoProcesado: this.estadoProcesado || this.estado,
+      clavePago: this.clavePago,
+      datosParaCodificarEnQR: this.datosParaCodificarEnQR,
+      correoDestino: this.correoDestino,
+
+      // Campos de compatibilidad con n8n y persistencia
+      id: this.idPago,
       fecha: this.fecha,
       monto: this.monto,
       estado: this.estado,
       montoNeto: this.montoNeto,
+      montoFinal: this.montoFinal,
       retencion: this.retencion,
-      clavePago: this.clavePago,
+      flete: this.flete,
+      calculoEspecifico: this.calculoEspecifico,
       motivoRetencion: this.motivoRetencion,
       datosParaQR: this.datosParaQR,
       qrUrl: this.qrUrl,
       emailHtml: this.emailHtml,
       proveedor: {
-        nombre: this.proveedor.nombre,
-        cedula: this.proveedor.cedula,
-        email: this.proveedor.email,
-        tipoServicio: this.proveedor.tipoServicio,
-        porcentajeRetencion: this.proveedor.porcentajeRetencion,
-        estadoHacienda: this.proveedor.estadoHacienda,
-        nivelRiesgo: this.proveedor.nivelRiesgo
+        nombre: this.proveedor ? this.proveedor.nombre : '',
+        cedula: this.proveedor ? this.proveedor.cedula : '',
+        correo: this.proveedor ? (this.proveedor.correo || this.proveedor.email) : '',
+        email: this.proveedor ? (this.proveedor.correo || this.proveedor.email) : '',
+        categoria: this.proveedor ? this.proveedor.categoria : '',
+        detalle_categoria: this.proveedor ? this.proveedor.detalle_categoria : '',
+        tipoServicio: this.proveedor ? this.proveedor.tipoServicio : '',
+        estadoHacienda: this.proveedor ? this.proveedor.estadoHacienda : null,
+        nivelRiesgo: this.proveedor ? this.proveedor.nivelRiesgo : null
       }
     };
   }
