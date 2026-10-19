@@ -5,126 +5,132 @@
       "idPago": "PAG-001",
       "fecha": "2026-10-19",
       "monto": 500000,
-      "estado": "Aprobado",
-      "montoNeto": 435000,
-      "retencion": 65000,
+      "estado": "Pendiente",
+      "montoNeto": null,
+      "retencion": null,
       "motivoRetencion": null,
-      "datosParaQR": "PROVEEDOR: Soluciones Digitales Alfa S.A. | CEDULA: 3101123456 | MONTO_NETO: CRC 435000.00 | FECHA: 2026-10-19 | SERVICIO: Consultoría TI",
-      "qrUrl": "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=PROVEEDOR%3A%20Soluciones%20Digitales%20Alfa%20S.A.%20%7C%20CEDULA%3A%203101123456%20%7C%20MONTO_NETO%3A%20CRC%20435000.00%20%7C%20FECHA%3A%202026-10-19%20%7C%20SERVICIO%3A%20Consultor%C3%ADa%20TI",
+      "datosParaQR": null,
+      "qrUrl": null,
       "proveedor": {
         "nombre": "Soluciones Digitales Alfa S.A.",
         "cedula": "3101123456",
+        "email": "lmendezpozo@gmail.com",
         "tipoServicio": "Consultoría TI",
         "porcentajeRetencion": 13,
-        "estadoHacienda": "Al dia",
-        "nivelRiesgo": "Bajo",
-        "email": "soluciones.alfa@techcr.com"
-      }
+        "estadoHacienda": null,
+        "nivelRiesgo": null
+      },
+      "clavePago": null
     },
     {
       "id": "PAG-002",
       "idPago": "PAG-002",
       "fecha": "2026-10-19",
       "monto": 250000,
-      "estado": "Retenido",
+      "estado": "Pendiente",
       "montoNeto": null,
       "retencion": null,
-      "motivoRetencion": "Proveedor figura como Moroso ante el Ministerio de Hacienda",
+      "motivoRetencion": null,
       "datosParaQR": null,
       "qrUrl": null,
       "proveedor": {
         "nombre": "Constructora del Valle SRL",
         "cedula": "3102987654",
+        "email": "lmendezpozo@gmail.com",
         "tipoServicio": "Mantenimiento de Infraestructura",
         "porcentajeRetencion": 2,
-        "estadoHacienda": "Moroso",
-        "nivelRiesgo": "Alto",
-        "email": "constructora.valle@infra.cr"
-      }
+        "estadoHacienda": null,
+        "nivelRiesgo": null
+      },
+      "clavePago": null
     },
     {
       "id": "PAG-003",
       "idPago": "PAG-003",
       "fecha": "2026-10-19",
       "monto": 120000,
-      "estado": "Error de validacion",
+      "estado": "Pendiente",
       "montoNeto": null,
       "retencion": null,
-      "motivoRetencion": "Datos incompletos de origen: Cédula del proveedor faltante o nula.",
+      "motivoRetencion": null,
       "datosParaQR": null,
       "qrUrl": null,
       "proveedor": {
         "nombre": "Servicios Legales Jurídicos Asociados",
         "cedula": "",
+        "email": "lmendezpozo@gmail.com",
         "tipoServicio": "Asesoría Legal",
         "porcentajeRetencion": 13,
-        "estadoHacienda": "Al dia",
-        "nivelRiesgo": null,
-        "email": "legal@asociados.cr"
-      }
+        "estadoHacienda": null,
+        "nivelRiesgo": null
+      },
+      "clavePago": null
     },
     {
       "id": "PAG-004",
       "idPago": "PAG-004",
       "fecha": "2026-10-19",
       "monto": 0,
-      "estado": "Error de validacion",
+      "estado": "Pendiente",
       "montoNeto": null,
       "retencion": null,
-      "motivoRetencion": "Datos incompletos de origen: El monto (0) debe ser estrictamente mayor a 0.",
+      "motivoRetencion": null,
       "datosParaQR": null,
       "qrUrl": null,
       "proveedor": {
         "nombre": "Marketing y Publicidad Global",
         "cedula": "3101555888",
+        "email": "lmendezpozo@gmail.com",
         "tipoServicio": "Publicidad Digital",
         "porcentajeRetencion": 13,
-        "estadoHacienda": "Al dia",
-        "nivelRiesgo": null,
-        "email": "marketing@global.com"
-      }
+        "estadoHacienda": null,
+        "nivelRiesgo": null
+      },
+      "clavePago": null
     },
     {
       "id": "PAG-005",
       "idPago": "PAG-005",
       "fecha": "2026-10-19",
       "monto": 340000,
-      "estado": "Retenido",
+      "estado": "Pendiente",
       "montoNeto": null,
       "retencion": null,
-      "motivoRetencion": "Error de conexión con Hacienda - Revisión manual",
+      "motivoRetencion": null,
       "datosParaQR": null,
       "qrUrl": null,
       "proveedor": {
         "nombre": "Inversiones Fantasma No Registrada",
         "cedula": "9999999999",
+        "email": "lmendezpozo@gmail.com",
         "tipoServicio": "Servicios Varios",
         "porcentajeRetencion": 2,
-        "estadoHacienda": "Desconocido",
-        "nivelRiesgo": null,
-        "email": "fantasma@noexiste.com"
-      }
+        "estadoHacienda": null,
+        "nivelRiesgo": null
+      },
+      "clavePago": null
     },
     {
       "id": "PAG-006",
       "idPago": "PAG-006",
       "fecha": "2026-10-19",
       "monto": 800000,
-      "estado": "Aprobado",
-      "montoNeto": 696000,
-      "retencion": 104000,
+      "estado": "Pendiente",
+      "montoNeto": null,
+      "retencion": null,
       "motivoRetencion": null,
-      "datosParaQR": "PROVEEDOR: Ciberseguridad y Redes Avanzadas | CEDULA: 3101777444 | MONTO_NETO: CRC 696000.00 | FECHA: 2026-10-19 | SERVICIO: Seguridad Informática",
-      "qrUrl": "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=PROVEEDOR%3A%20Ciberseguridad%20y%20Redes%20Avanzadas%20%7C%20CEDULA%3A%203101777444%20%7C%20MONTO_NETO%3A%20CRC%20696000.00%20%7C%20FECHA%3A%202026-10-19%20%7C%20SERVICIO%3A%20Seguridad%20Inform%C3%A1tica",
+      "datosParaQR": null,
+      "qrUrl": null,
       "proveedor": {
         "nombre": "Ciberseguridad y Redes Avanzadas",
         "cedula": "3101777444",
+        "email": "lmendezpozo@gmail.com",
         "tipoServicio": "Seguridad Informática",
         "porcentajeRetencion": 13,
-        "estadoHacienda": "Al dia",
-        "nivelRiesgo": "Bajo",
-        "email": "ciberseguridad@redes.cr"
-      }
+        "estadoHacienda": null,
+        "nivelRiesgo": null
+      },
+      "clavePago": null
     }
   ],
   "hacienda_mock": [

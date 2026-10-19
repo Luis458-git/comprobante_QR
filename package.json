@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/main.js",
     "json": "npx json-server --watch db/db.json --port 3000",
-    "server": "npx json-server --watch db/db.json --port 3000"
+    "server": "npx json-server --watch db/db.json --port 3000",
+    "reset": "node -e \"const fs=require('fs');const db=JSON.parse(fs.readFileSync('db/db.json'));db.pagos.forEach(p=>{p.estado='Pendiente';p.montoNeto=null;p.retencion=null;p.clavePago=null;p.motivoRetencion=null;p.datosParaQR=null;p.qrUrl=null;if(p.proveedor){p.proveedor.estadoHacienda=null;p.proveedor.nivelRiesgo=null;p.proveedor.email='lmendezpozo@gmail.com'}});fs.writeFileSync('db/db.json',JSON.stringify(db,null,2));console.log('Base de datos reseteada a Pendiente!')\""
   },
   "keywords": [
     "poo",
