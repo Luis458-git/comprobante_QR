@@ -1,0 +1,145 @@
+{
+  "name": "05_WF_Notificador_EmitirComprobante",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "node-sub4-trigger",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        200,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ ($json.datosPagoAprobado || $json).qrUrl || ('https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=' + encodeURIComponent(($json.datosPagoAprobado || $json).datosParaCodificarEnQR || 'PAGO_APROBADO')) }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "file",
+              "outputPropertyName": "data"
+            }
+          }
+        }
+      },
+      "id": "node-sub4-http-qr",
+      "name": "HTTP - Descargar Imagen QR",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ ($('Execute Workflow Trigger').item.json.datosPagoAprobado || $('Execute Workflow Trigger').item.json).correoDestino || 'lmendezpozo@gmail.com' }}",
+        "subject": "=🌟 Comprobante Oficial de Pago Aprobado - {{ ($('Execute Workflow Trigger').item.json.datosPagoAprobado || $('Execute Workflow Trigger').item.json).clavePago }}",
+        "emailType": "html",
+        "message": "={{ ($('Execute Workflow Trigger').item.json.datosPagoAprobado || $('Execute Workflow Trigger').item.json).emailHtml }}",
+        "options": {
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {
+                "property": "data"
+              }
+            ]
+          }
+        }
+      },
+      "id": "node-sub4-gmail",
+      "name": "Gmail - Enviar Comprobante con QR",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        680,
+        300
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=http://localhost:3000/pagos/{{ ($('Execute Workflow Trigger').item.json.datosPagoAprobado || $('Execute Workflow Trigger').item.json).id || ($('Execute Workflow Trigger').item.json.datosPagoAprobado || $('Execute Workflow Trigger').item.json).idPago }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($('Execute Workflow Trigger').item.json.datosPagoAprobado || $('Execute Workflow Trigger').item.json) }}",
+        "options": {}
+      },
+      "id": "node-sub4-http-patch",
+      "name": "HTTP - Actualizar Pago Aprobado en JSON Server",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        920,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Retorno bajo contrato estándar { ok, data, error }\ntry {\n  const triggerData = $('Execute Workflow Trigger').first().json;\n  const pago = triggerData.datosPagoAprobado || triggerData;\n  return [{\n    json: {\n      ok: true,\n      data: {\n        id: pago.id || pago.idPago,\n        clavePago: pago.clavePago,\n        correoDestino: pago.correoDestino,\n        montoFinal: pago.montoFinal,\n        notificado: true,\n        actualizadoEnBD: true\n      },\n      error: null\n    }\n  }];\n} catch (error) {\n  return [{\n    json: {\n      ok: false,\n      data: null,\n      error: error.message || 'Error en emisión de comprobante y notificación'\n    }\n  }];\n}"
+      },
+      "id": "node-sub4-code-format",
+      "name": "Code - Formatear Salida Estandar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1160,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Descargar Imagen QR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Descargar Imagen QR": {
+      "main": [
+        [
+          {
+            "node": "Gmail - Enviar Comprobante con QR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail - Enviar Comprobante con QR": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Actualizar Pago Aprobado en JSON Server",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Actualizar Pago Aprobado en JSON Server": {
+      "main": [
+        [
+          {
+            "node": "Code - Formatear Salida Estandar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

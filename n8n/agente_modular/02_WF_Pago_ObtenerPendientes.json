@@ -1,0 +1,69 @@
+{
+  "name": "02_WF_Pago_ObtenerPendientes",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "node-sub1-trigger",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://localhost:3000/pagos?estado=Pendiente",
+        "options": {}
+      },
+      "id": "node-sub1-http",
+      "name": "HTTP - Consultar Pagos Pendientes",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Normalización a contrato común: { ok, data, error }\ntry {\n  const items = $input.all().map(i => i.json);\n  return [{\n    json: {\n      ok: true,\n      data: {\n        total: items.length,\n        pagos: items\n      },\n      error: null\n    }\n  }];\n} catch (error) {\n  return [{\n    json: {\n      ok: false,\n      data: null,\n      error: error.message || 'Error al obtener pagos pendientes'\n    }\n  }];\n}"
+      },
+      "id": "node-sub1-code-format",
+      "name": "Code - Formatear Salida Estandar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Consultar Pagos Pendientes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Consultar Pagos Pendientes": {
+      "main": [
+        [
+          {
+            "node": "Code - Formatear Salida Estandar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

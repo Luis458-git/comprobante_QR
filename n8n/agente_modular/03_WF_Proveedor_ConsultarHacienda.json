@@ -1,0 +1,76 @@
+{
+  "name": "03_WF_Proveedor_ConsultarHacienda",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "node-sub2-trigger",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=http://localhost:3000/hacienda_mock?cedula={{ $json.cedula }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "id": "node-sub2-http",
+      "name": "HTTP - Consultar Hacienda Mock",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Formateo del estado tributario bajo contrato { ok, data, error }\ntry {\n  const triggerInput = $('Execute Workflow Trigger').first().json;\n  const cedulaConsultada = triggerInput.cedula || '';\n  const httpRes = $input.first().json;\n  \n  const rawBody = httpRes.body !== undefined ? httpRes.body : httpRes;\n  const data = Array.isArray(rawBody) ? rawBody[0] : rawBody;\n\n  if (!data || (!data.estadoTributario && !data.moroso)) {\n    return [{\n      json: {\n        ok: true,\n        data: {\n          cedula: cedulaConsultada,\n          estadoTributario: \"Desconocido\",\n          moroso: \"DESCONOCIDO\",\n          motivo: \"Cédula no localizada en Hacienda o servicio no concluyente\"\n        },\n        error: null\n      }\n    }];\n  }\n\n  let estadoFinal = \"Al dia\";\n  if (data.moroso === \"SI\" || data.estadoTributario === \"Moroso\") {\n    estadoFinal = \"Moroso\";\n  }\n\n  return [{\n    json: {\n      ok: true,\n      data: {\n        cedula: data.cedula || cedulaConsultada,\n        nombre: data.nombre || '',\n        estadoTributario: estadoFinal,\n        moroso: data.moroso || (estadoFinal === \"Moroso\" ? \"SI\" : \"NO\"),\n        situacion: data.situacion || 'Inscrito'\n      },\n      error: null\n    }\n  }];\n} catch (error) {\n  return [{\n    json: {\n      ok: false,\n      data: null,\n      error: error.message || 'Error en consulta de Hacienda'\n    }\n  }];\n}"
+      },
+      "id": "node-sub2-code-format",
+      "name": "Code - Formatear Salida Estandar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP - Consultar Hacienda Mock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP - Consultar Hacienda Mock": {
+      "main": [
+        [
+          {
+            "node": "Code - Formatear Salida Estandar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
